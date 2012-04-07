@@ -16,72 +16,21 @@ public class MainActivity extends Activity
   @Override
     public void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
-      setContentView(R.layout.main);
-	  if (android.os.Build.VERSION.SDK_INT > 9) {
-		  StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-			  .permitAll().build();
-		  StrictMode.setThreadPolicy(policy);
-	  }
+      if (android.os.Build.VERSION.SDK_INT > 9) {
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+          .permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+      }
+      socket = new Socket("192.158.1.3", 1234);
+      ParcelFileDescriptor  pfd =ParcelFileDescriptor.fromSocket(socket);
+      recorder = new MediaRecorder();
+      recorder.setVideoSource(MediaRecorder.VideoSource.DEFAULT);
+      recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+      recorder.setOutputFile(pfd.getFileDescriptor());
+      recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP);
+      mPreview = new Preview(VideoRecorder.this,recorder);
 
-      textOut = (EditText)findViewById(R.id.textout);
-      Button buttonSend = (Button)findViewById(R.id.send);
-      textIn = (TextView)findViewById(R.id.textin);
-      buttonSend.setOnClickListener(buttonSendOnClickListener);
+      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+      setContentView(mPreview);
     }
-
-  Button.OnClickListener buttonSendOnClickListener
-    = new Button.OnClickListener(){
-
-      @Override
-        public void onClick(View arg0) {
-          // TODO Auto-generated method stub
-          Socket socket = null;
-          OutputStream dataOutputStream = null;
-          DataInputStream dataInputStream = null;
-
-          try {
-            socket = new Socket("192.168.1.3", 1234);
-            dataOutputStream = new DataOutputStream(socket.getOutputStream());
-            dataInputStream = new DataInputStream(socket.getInputStream());
-			PrintWriter out = new PrintWriter(dataOutputStream);
-            out.print(textOut.getText().toString());
-			out.close();
-            textIn.setText(dataInputStream.readUTF());
-          } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-          } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-          }
-          finally{
-            if (socket != null){
-              try {
-                socket.close();
-              } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-              }
-            }
-
-            if (dataOutputStream != null){
-              try {
-                dataOutputStream.close();
-              } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-              }
-            }
-
-            if (dataInputStream != null){
-              try {
-                dataInputStream.close();
-              } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-              }
-            }
-          }
-        }
-    };
 }
