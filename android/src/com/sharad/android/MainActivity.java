@@ -26,20 +26,39 @@ public class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
       setContentView(R.layout.main);
-      if (android.os.Build.VERSION.SDK_INT > 9) {
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-          .permitAll().build();
-        StrictMode.setThreadPolicy(policy);
+      String hostname = "192.168.1.3";
+      int port = 1234;
+
+      Socket socket = null;
+      try {
+        socket = new Socket(InetAddress.getByName(hostname), port);
+      } catch (UnknownHostException e) {
+
+        e.printStackTrace();
+      } catch (IOException e) {
+
+        e.printStackTrace();
       }
-      // Define UI elements
-      mView = (VideoView) findViewById(R.id.video_preview);
-      connectionStatus = (TextView) findViewById(R.id.connection_status_textview);
-      mHolder = mView.getHolder();
-      mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-      SERVERIP = "192.168.1.3";
-      // Run new thread to handle socket communications
-      Thread sendVideo = new Thread(new SendVideoThread());
-      sendVideo.start();
+
+      ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(socket);
+
+      recorder = new MediaRecorder();
+      recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+      recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+      recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+      recorder.setOutputFile(pfd.getFileDescriptor());
+
+      try {
+        recorder.prepare();
+      } catch (IllegalStateException e) {
+
+        e.printStackTrace();
+      } catch (IOException e) {
+
+        e.printStackTrace();
+      }
+
+      recorder.start();
     }
   public class SendVideoThread implements Runnable{
     public void run(){
@@ -85,7 +104,7 @@ public class MainActivity extends Activity
                     e.printStackTrace();
                   }
                   recorder.start();
-				  recorder.release();
+                  recorder.release();
                 }
               });
             } catch (Exception e) {
