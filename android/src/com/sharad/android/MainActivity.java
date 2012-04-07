@@ -7,28 +7,72 @@ import java.net.*;
 
 public class MainActivity extends Activity
 {
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState)
-	{
-        super.onCreate(savedInstanceState);
-		if (android.os.Build.VERSION.SDK_INT > 9) {
-			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-				.permitAll().build();
-			StrictMode.setThreadPolicy(policy);
-		}
-		
-		try {
-			Socket s = new Socket("192.168.1.3",1234);	
-			PrintWriter out = new PrintWriter(s.getOutputStream(),true);
-			System.out.println("WRITING");
-			out.print("hello world");
-			out.close();
-			s.close();
-		} catch (IOException e){
-			e.printStackTrace();
-		}
-		
-        setContentView(R.layout.main);
+  EditText textOut;
+  TextView textIn;
+
+  /** Called when the activity is first created. */
+  @Override
+    public void onCreate(Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
+      setContentView(R.layout.main);
+
+      textOut = (EditText)findViewById(R.id.textout);
+      Button buttonSend = (Button)findViewById(R.id.send);
+      textIn = (TextView)findViewById(R.id.textin);
+      buttonSend.setOnClickListener(buttonSendOnClickListener);
     }
+
+  Button.OnClickListener buttonSendOnClickListener
+    = new Button.OnClickListener(){
+
+      @Override
+        public void onClick(View arg0) {
+          // TODO Auto-generated method stub
+          Socket socket = null;
+          DataOutputStream dataOutputStream = null;
+          DataInputStream dataInputStream = null;
+
+          try {
+            socket = new Socket("192.168.1.101", 8888);
+            dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataInputStream = new DataInputStream(socket.getInputStream());
+            dataOutputStream.writeUTF(textOut.getText().toString());
+            textIn.setText(dataInputStream.readUTF());
+          } catch (UnknownHostException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          }
+          finally{
+            if (socket != null){
+              try {
+                socket.close();
+              } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+              }
+            }
+
+            if (dataOutputStream != null){
+              try {
+                dataOutputStream.close();
+              } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+              }
+            }
+
+            if (dataInputStream != null){
+              try {
+                dataInputStream.close();
+              } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+              }
+            }
+          }
+        }
+    };
 }
