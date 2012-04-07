@@ -28,7 +28,11 @@ public class MainActivity extends Activity
       setContentView(R.layout.main);
       String hostname = "192.168.1.3";
       int port = 1234;
-
+      if (android.os.Build.VERSION.SDK_INT > 9) {
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+          .permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+      }
       Socket socket = null;
       try {
         socket = new Socket(InetAddress.getByName(hostname), port);
