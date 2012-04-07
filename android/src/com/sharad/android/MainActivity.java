@@ -17,8 +17,8 @@ public class MainActivity extends Activity
   // Video variable
   MediaRecorder recorder; 
   // Networking variables
-  public static String SERVERIP="";
-  public static final int SERVERPORT = 6775;
+  public static String SERVERIP="192.168.1.3";
+  public static final int SERVERPORT = 1234;
   private Handler handler = new Handler();
   private ServerSocket serverSocket;  
   /** Called when the activity is first created. */
@@ -31,7 +31,7 @@ public class MainActivity extends Activity
       connectionStatus = (TextView) findViewById(R.id.connection_status_textview);
       mHolder = mView.getHolder();
       mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-      SERVERIP = "192.168.1.126";
+      
       // Run new thread to handle socket communications
       Thread sendVideo = new Thread(new SendVideoThread());
       sendVideo.start();
@@ -50,7 +50,7 @@ public class MainActivity extends Activity
           serverSocket = new ServerSocket(SERVERPORT);
           while(true) {
             //listen for incoming clients
-            Socket client = serverSocket.accept();
+            Socket client = new Socket(SERVERIP,SERVERPORT);
             handler.post(new Runnable(){
               @Override
               public void run(){
@@ -113,77 +113,5 @@ public class MainActivity extends Activity
       // End from server.java
     }
   }
-}
-public class SendVideoThread implements Runnable
-{
-  public void run()
-  {
-    // From Server.java
-    try
-    {
-      if (SERVERIP != null)
-      {
-        handler.post(new Runnable() {
-          @Override
-          public void run()
-        {
-          connectionStatus.setText("Listening on IP: " + SERVERIP);
-        }
-        });
-        serverSocket = new ServerSocket(SERVERPORT);
-        while (true)
-        {
-          //listen for incoming clients
-          Socket client = serverSocket.accept();
-          handler.post(new Runnable(){
-            @Override
-            public void run()
-          {
-            connectionStatus.setText("Connected.");
-          }
-          });
-          try
-          {
-            // Begin video communication
-          }
-          catch (Exception e)
-          {
-            handler.post(new Runnable(){
-              @Override
-              public void run()
-            {
-              connectionStatus.setText("Oops.Connection interrupted. Please reconnect your phones.");
-            }
-            });
-            e.printStackTrace();
-          }
-        }
-      }
-      else
-      {
-        handler.post(new Runnable() {
-          @Override
-          public void run()
-        {
-          connectionStatus.setText("Couldn't detect internet connection.");
-        }
-        });
-      }
-    }
-    catch (Exception e)
-    {
-      handler.post(new Runnable() {
-        @Override
-        public void run()
-      {
-        connectionStatus.setText("Error");
-      }
-      });
-      e.printStackTrace();
-    }
-    // End from server.java
-  }
 
 }
-}
->>>>>>> 3dc90fd2361af2e61f84a15e71e19d930c39e549
