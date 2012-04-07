@@ -1,6 +1,7 @@
 package com.sharad.android;
 
 import android.app.*;
+import android.content.pm.*;
 import android.media.*;
 import android.os.*;
 import android.view.*;
@@ -20,12 +21,16 @@ public class MainActivity extends Activity
   public static String SERVERIP="";
   public static final int SERVERPORT = 1234;
   private Handler handler = new Handler();
-  private ServerSocket serverSocket;  
+  private ServerSocket serverSocket;
+  private ParcelFileDescriptor pfd;
+  private Socket socket;
   /** Called when the activity is first created. */
   @Override
     protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
+	  
       setContentView(R.layout.main);
+	  Button button = (Button)findViewById(R.id.stop);
       String hostname = "192.168.1.3";
       int port = 1234;
       if (android.os.Build.VERSION.SDK_INT > 9) {
@@ -33,7 +38,7 @@ public class MainActivity extends Activity
           .permitAll().build();
         StrictMode.setThreadPolicy(policy);
       }
-      Socket socket = null;
+      socket = null;
       try {
         socket = new Socket(InetAddress.getByName(hostname), port);
       } catch (UnknownHostException e) {
@@ -44,14 +49,19 @@ public class MainActivity extends Activity
         e.printStackTrace();
       }
 
-      ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(socket);
+      pfd = ParcelFileDescriptor.fromSocket(socket);
 
       recorder = new MediaRecorder();
-      recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-      recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-      recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+      VideoView p = (VideoView)findViewById(R.id.video_preview);
+	  SurfaceHolder holder = p.getHolder();
+	  holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+	  recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+      recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+      recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP);
       recorder.setOutputFile(pfd.getFileDescriptor());
-
+	  recorder.setPreviewDisplay(holder.getSurface());
+	  setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+	  
       try {
         recorder.prepare();
       } catch (IllegalStateException e) {
@@ -61,9 +71,21 @@ public class MainActivity extends Activity
 
         e.printStackTrace();
       }
-
       recorder.start();
+	  
     }
+	public void stop(View v){
+		recorder.stop();
+		
+		try {
+			if (socket!=null){
+				pfd.close();
+				socket.close();
+				}
+		} catch (IOException e){
+			e.printStackTrace();
+		}
+	}
   public class SendVideoThread implements Runnable{
     public void run(){
       // From Server.java
