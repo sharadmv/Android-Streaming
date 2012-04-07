@@ -113,3 +113,77 @@ public class MainActivity extends Activity
       // End from server.java
     }
   }
+}
+public class SendVideoThread implements Runnable
+{
+  public void run()
+  {
+    // From Server.java
+    try
+    {
+      if (SERVERIP != null)
+      {
+        handler.post(new Runnable() {
+          @Override
+          public void run()
+        {
+          connectionStatus.setText("Listening on IP: " + SERVERIP);
+        }
+        });
+        serverSocket = new ServerSocket(SERVERPORT);
+        while (true)
+        {
+          //listen for incoming clients
+          Socket client = serverSocket.accept();
+          handler.post(new Runnable(){
+            @Override
+            public void run()
+          {
+            connectionStatus.setText("Connected.");
+          }
+          });
+          try
+          {
+            // Begin video communication
+          }
+          catch (Exception e)
+          {
+            handler.post(new Runnable(){
+              @Override
+              public void run()
+            {
+              connectionStatus.setText("Oops.Connection interrupted. Please reconnect your phones.");
+            }
+            });
+            e.printStackTrace();
+          }
+        }
+      }
+      else
+      {
+        handler.post(new Runnable() {
+          @Override
+          public void run()
+        {
+          connectionStatus.setText("Couldn't detect internet connection.");
+        }
+        });
+      }
+    }
+    catch (Exception e)
+    {
+      handler.post(new Runnable() {
+        @Override
+        public void run()
+      {
+        connectionStatus.setText("Error");
+      }
+      });
+      e.printStackTrace();
+    }
+    // End from server.java
+  }
+
+}
+}
+>>>>>>> 3dc90fd2361af2e61f84a15e71e19d930c39e549
