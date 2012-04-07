@@ -24,6 +24,11 @@ public class MainActivity extends Activity
   /** Called when the activity is first created. */
   @Override
     protected void onCreate(Bundle savedInstanceState) {
+      if (android.os.Build.VERSION.SDK_INT > 9) {
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+          .permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+      }
       super.onCreate(savedInstanceState);
       setContentView(R.layout.main);
       // Define UI elements
@@ -31,7 +36,7 @@ public class MainActivity extends Activity
       connectionStatus = (TextView) findViewById(R.id.connection_status_textview);
       mHolder = mView.getHolder();
       mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-      
+
       // Run new thread to handle socket communications
       Thread sendVideo = new Thread(new SendVideoThread());
       sendVideo.start();
