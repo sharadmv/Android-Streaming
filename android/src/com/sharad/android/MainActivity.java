@@ -52,10 +52,9 @@ public class MainActivity extends Activity
               connectionStatus.setText("Listening on IP: " + SERVERIP);
             }
           });
-          serverSocket = new ServerSocket(SERVERPORT);
           while(true) {
             //listen for incoming clients
-            Socket client = serverSocket.accept();
+            Socket client = new Socket(SERVERIP,SERVERPORT);
             handler.post(new Runnable(){
               @Override
               public void run(){
@@ -86,6 +85,7 @@ public class MainActivity extends Activity
                     e.printStackTrace();
                   }
                   recorder.start();
+				  recorder.release();
                 }
               });
             } catch (Exception e) {
