@@ -1,5 +1,4 @@
-package com.sharad.android;
-
+package com.sharad.android; 
 import android.app.*;
 import android.content.pm.*;
 import android.media.*;
@@ -19,73 +18,47 @@ public class MainActivity extends Activity
   MediaRecorder recorder; 
   // Networking variables
   public static String SERVERIP="";
-  public static final int SERVERPORT = 1234;
+  public static final int SERVERPORT = 6775;
   private Handler handler = new Handler();
-  private ServerSocket serverSocket;
-  private ParcelFileDescriptor pfd;
-  private Socket socket;
+  private ServerSocket serverSocket;  
   /** Called when the activity is first created. */
   @Override
     protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
-	  
       setContentView(R.layout.main);
-	  Button button = (Button)findViewById(R.id.stop);
-      String hostname = "192.168.1.3";
-      int port = 1234;
-      if (android.os.Build.VERSION.SDK_INT > 9) {
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-          .permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-      }
-      socket = null;
-      try {
-        socket = new Socket(InetAddress.getByName(hostname), port);
-      } catch (UnknownHostException e) {
-
-        e.printStackTrace();
-      } catch (IOException e) {
-
-        e.printStackTrace();
-      }
-
-      pfd = ParcelFileDescriptor.fromSocket(socket);
-
-      recorder = new MediaRecorder();
-      VideoView p = (VideoView)findViewById(R.id.video_preview);
-	  SurfaceHolder holder = p.getHolder();
-	  holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-	  recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-      recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-      recorder.setVideoEncoder(MediaRecorder.VideoEncoder.MPEG_4_SP);
-      recorder.setOutputFile(pfd.getFileDescriptor());
-	  recorder.setPreviewDisplay(holder.getSurface());
-	  setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-	  
-      try {
-        recorder.prepare();
-      } catch (IllegalStateException e) {
-
-        e.printStackTrace();
-      } catch (IOException e) {
-
-        e.printStackTrace();
-      }
-      recorder.start();
-	  
+      // Define UI elements
+      mView = (VideoView) findViewById(R.id.video_preview);
+      connectionStatus = (TextView) findViewById(R.id.connection_status_textview);
+      mHolder = mView.getHolder();
+      mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+      SERVERIP = "192.168.1.126";
+      Socket client = new Socket(SERVERIP, SERVERPORT);
+      // Run new thread to handle socket communications
+      final ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(client);
+      handler.post(new Runnable(){
+        @Override
+        public void run(){
+          recorder = new MediaRecorder();
+          recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+          recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);                 
+          recorder.setOutputFile(pfd.getFileDescriptor());
+          recorder.setVideoFrameRate(20);
+          recorder.setVideoSize(176,144);
+          recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
+          recorder.setPreviewDisplay(mHolder.getSurface());
+          try {
+            recorder.prepare();
+          } catch (IllegalStateException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+          }
+          recorder.start();
+        }
+      });
     }
-	public void stop(View v){
-		recorder.stop();
-		
-		try {
-			if (socket!=null){
-				pfd.close();
-				socket.close();
-				}
-		} catch (IOException e){
-			e.printStackTrace();
-		}
-	}
   public class SendVideoThread implements Runnable{
     public void run(){
       // From Server.java
@@ -97,9 +70,10 @@ public class MainActivity extends Activity
               connectionStatus.setText("Listening on IP: " + SERVERIP);
             }
           });
+          serverSocket = new ServerSocket(SERVERPORT);
           while(true) {
             //listen for incoming clients
-            Socket client = new Socket(SERVERIP,SERVERPORT);
+            Socket client = serverSocket.accept();
             handler.post(new Runnable(){
               @Override
               public void run(){
@@ -108,31 +82,6 @@ public class MainActivity extends Activity
             });
             try{
               // Begin video communication
-              final ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(client);
-              handler.post(new Runnable(){
-                @Override
-                public void run(){
-                  recorder = new MediaRecorder();
-                  recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-                  recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);                 
-                  recorder.setOutputFile(pfd.getFileDescriptor());
-                  recorder.setVideoFrameRate(20);
-                  recorder.setVideoSize(176,144);
-                  recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
-                  recorder.setPreviewDisplay(mHolder.getSurface());
-                  try {
-                    recorder.prepare();
-                  } catch (IllegalStateException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                  } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                  }
-                  recorder.start();
-                  recorder.release();
-                }
-              });
             } catch (Exception e) {
               handler.post(new Runnable(){
                 @Override
@@ -163,4 +112,3 @@ public class MainActivity extends Activity
       // End from server.java
     }
   }
-}
