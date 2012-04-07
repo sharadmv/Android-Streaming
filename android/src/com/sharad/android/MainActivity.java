@@ -26,43 +26,15 @@ public class MainActivity extends Activity
     protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
       setContentView(R.layout.main);
-      if (android.os.Build.VERSION.SDK_INT > 9) {
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-          .permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-      }
       // Define UI elements
       mView = (VideoView) findViewById(R.id.video_preview);
       connectionStatus = (TextView) findViewById(R.id.connection_status_textview);
       mHolder = mView.getHolder();
       mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
       SERVERIP = "192.168.1.126";
-      Socket client = new Socket(SERVERIP, SERVERPORT);
       // Run new thread to handle socket communications
-      final ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(client);
-      handler.post(new Runnable(){
-        @Override
-        public void run(){
-          recorder = new MediaRecorder();
-          recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-          recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);                 
-          recorder.setOutputFile(pfd.getFileDescriptor());
-          recorder.setVideoFrameRate(20);
-          recorder.setVideoSize(176,144);
-          recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
-          recorder.setPreviewDisplay(mHolder.getSurface());
-          try {
-            recorder.prepare();
-          } catch (IllegalStateException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-          } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-          }
-          recorder.start();
-        }
-      });
+      Thread sendVideo = new Thread(new SendVideoThread());
+      sendVideo.start();
     }
   public class SendVideoThread implements Runnable{
     public void run(){
@@ -87,6 +59,30 @@ public class MainActivity extends Activity
             });
             try{
               // Begin video communication
+              final ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(client);
+              handler.post(new Runnable(){
+                @Override
+                public void run(){
+                  recorder = new MediaRecorder();
+                  recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+                  recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);                 
+                  recorder.setOutputFile(pfd.getFileDescriptor());
+                  recorder.setVideoFrameRate(20);
+                  recorder.setVideoSize(176,144);
+                  recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);
+                  recorder.setPreviewDisplay(mHolder.getSurface());
+                  try {
+                    recorder.prepare();
+                  } catch (IllegalStateException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                  } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                  }
+                  recorder.start();
+                }
+              });
             } catch (Exception e) {
               handler.post(new Runnable(){
                 @Override
